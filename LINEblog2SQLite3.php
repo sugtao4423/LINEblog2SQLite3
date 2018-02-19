@@ -35,7 +35,7 @@ for($i = 1; ; $i++){
         $id = trim($current['id']);
         $title = trim($current['title']);
         $createdAt = trim($current['createdAt']);
-        $plain = trim($current['plain']);
+        $plain = trim($current['bodyPlain']);
         $content = trim(getArticleContent($current['body'], $memberName, $createdAt));
 
         if($id <= $lastId){
