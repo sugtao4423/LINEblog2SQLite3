@@ -10,7 +10,9 @@ date_default_timezone_set('Asia/Tokyo');
 $memberName = $argv[1];
 $url = "https://blog-api.line-apps.com/v1/blog/${memberName}/articles?withBlog=1&pageKey=";
 
-$db = new SQLite3("./${memberName}.db");
+define('MEMBER_DIR', __DIR__ . "/${memberName}");
+
+$db = new SQLite3(__DIR__ . "/${memberName}.db");
 $db->exec("CREATE TABLE IF NOT EXISTS ${memberName} (id INTEGER, title TEXT, createdAt INTEGER, plain TEXT, content TEXT, UNIQUE(id))");
 
 $lastId = $db->querySingle("SELECT max(id) FROM ${memberName}");
@@ -36,7 +38,7 @@ for($i = 1; ; $i++){
         $title = trim($current['title']);
         $createdAt = trim($current['createdAt']);
         $plain = trim($current['bodyPlain']);
-        $content = trim(getArticleContent($current['body'], $memberName, $createdAt));
+        $content = trim(getArticleContent($current['body'], $createdAt));
 
         if($id <= $lastId){
             $breakFlag = true;
@@ -86,22 +88,22 @@ function isNextPageExists($json){
 }
 
 
-function getArticleContent($body, $memberName, $createdAt){
-    if(!file_exists("./${memberName}")){
-        mkdir("./${memberName}");
+function getArticleContent($body, $createdAt){
+    if(!file_exists(MEMBER_DIR)){
+        mkdir(MEMBER_DIR);
     }
 
     $date = date('Y-m-d H.i.s', $createdAt);
-    $content = replaceMediaUrl($body, $memberName, $date);
+    $content = replaceMediaUrl($body, $date);
     return $content;
 }
 
-function replaceMediaUrl($content, $memberName, $date){
+function replaceMediaUrl($content, $date){
     $mediaCount = 1;
     $instagramImgPattern = '|(<div\s+?class="embed-instagram-media">)<a\s+?href="(https://www\.instagram\.com/p/.+?/)"(.*?)><img\s+?src="https://scontent\.cdninstagram\.com/.+?"(.*?)/></a></div>|s';
     if(preg_match_all($instagramImgPattern, $content, $m) > 0){
         for($i = 0; $i < count($m[0]); $i++){
-            $mediaPath = saveMedia("{$m[2][$i]}media/?size=l", $memberName, $date, $mediaCount++);
+            $mediaPath = saveMedia("{$m[2][$i]}media/?size=l", $date, $mediaCount++);
 
             $content = preg_replace($instagramImgPattern, "$1<a href=\"${mediaPath}\"$3><img src=\"${mediaPath}\"$4/></a></div>", $content, 1);
         }
@@ -110,8 +112,8 @@ function replaceMediaUrl($content, $memberName, $date){
     $instagramVideoPattern = '|<video\s+?controls(.*?)poster="(https://scontent\.cdninstagram\.com/.+?)"(.*?)><source\s+?src="(https://scontent\.cdninstagram\.com/.+?)"></source><a.+?href=.+?><img.+?src=".+?"(.*?)/></a></video>|s';
     if(preg_match_all($instagramVideoPattern, $content, $m) > 0){
         for($i = 0; $i < count($m[0]); $i++){
-            $posterImgPath = saveMedia($m[2][$i], $memberName, $date, $mediaCount++);
-            $videoPath = saveMedia($m[4][$i], $memberName, $date, $mediaCount++);
+            $posterImgPath = saveMedia($m[2][$i], $date, $mediaCount++);
+            $videoPath = saveMedia($m[4][$i], $date, $mediaCount++);
 
             $content = preg_replace($instagramVideoPattern, "<video controls poster=\"${posterImgPath}\"$1$3><source src=\"${videoPath}\"></source><a href=\"${videoPath}\" target=\"_blank\"><img src=\"${posterImgPath}\"$5/></a></video>", $content, 1);
         }
@@ -125,7 +127,7 @@ function replaceMediaUrl($content, $memberName, $date){
             if(array_key_exists($url, $imgCache)){
                 $imgPath = $imgCache[$url];
             }else{
-                $imgPath = saveMedia($url, $memberName, $date, $mediaCount++);
+                $imgPath = saveMedia($url, $date, $mediaCount++);
                 $imgCache = array_merge($imgCache, array($url => $imgPath));
             }
 
@@ -136,7 +138,7 @@ function replaceMediaUrl($content, $memberName, $date){
     return $content;
 }
 
-function saveMedia($url, $memberName, $date, $mediaCount){
+function saveMedia($url, $date, $mediaCount){
     $media = file_get_contents($url);
     $http_header = $http_response_header;
     for($i = 0; $i < count($http_header); $i++){
@@ -145,7 +147,7 @@ function saveMedia($url, $memberName, $date, $mediaCount){
             break;
         }
     }
-    $mediaPath = "./${memberName}/${date}-${mediaCount}.${mediaExt}";
+    $mediaPath = MEMBER_DIR . "/${date}-${mediaCount}.${mediaExt}";
 
     if(!file_exists($mediaPath)){
         file_put_contents($mediaPath, $media);
