@@ -13,7 +13,7 @@ $url = "https://blog-api.line-apps.com/v1/blog/${memberName}/articles?withBlog=1
 define('MEMBER_DIR', __DIR__ . "/${memberName}");
 
 $db = new SQLite3(__DIR__ . "/${memberName}.db");
-$db->exec("CREATE TABLE IF NOT EXISTS ${memberName} (id INTEGER, title TEXT, createdAt INTEGER, plain TEXT, content TEXT, UNIQUE(id))");
+$db->exec("CREATE TABLE IF NOT EXISTS ${memberName} (id INTEGER UNIQUE, title TEXT, createdAt INTEGER, plain TEXT, content TEXT)");
 
 $lastId = $db->querySingle("SELECT max(id) FROM ${memberName}");
 $lastId = ($lastId === NULL) ? 0 : $lastId;
@@ -64,15 +64,14 @@ for($i = 1; ; $i++){
 }
 
 $articles = array_reverse($articles);
-for($i = 0; $i < count($articles); $i++){
-    $id = $articles[$i]['id'];
-    $title = str_replace("'", "''", $articles[$i]['title']);
-    $createdAt = $articles[$i]['createdAt'];
-    $plain = str_replace("'", "''", $articles[$i]['plain']);
-    $content = str_replace("'", "''", $articles[$i]['content']);
-
-    $sql = "INSERT INTO ${memberName} VALUES (${id}, '${title}', ${createdAt}, '${plain}', '${content}')";
-    $db->exec($sql);
+foreach($articles as $article){
+    $stmt = $db->prepare("INSERT INTO ${memberName} VALUES (:id, :title, :createdAt, :plain, :content)");
+    $stmt->bindValue(':id', $article['id'], SQLITE3_INTEGER);
+    $stmt->bindValue(':title', $article['title'], SQLITE3_TEXT);
+    $stmt->bindValue(':createdAt', $article['createdAt'], SQLITE3_INTEGER);
+    $stmt->bindValue(':plain', $article['plain'], SQLITE3_TEXT);
+    $stmt->bindValue(':content', $article['content'], SQLITE3_TEXT);
+    $stmt->execute();
 }
 echo "Finished!\n";
 echo 'Add count: ' . count($articles) . "\n";
