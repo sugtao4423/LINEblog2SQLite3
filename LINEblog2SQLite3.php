@@ -21,7 +21,7 @@ $lastId = ($lastId === NULL) ? 0 : $lastId;
 $articles = array();
 
 for($i = 1; ; $i++){
-    $str = file_get_contents($url . $i);
+    $str = safeFileGet($url . $i);
     $json = json_decode($str, true);
 
     if(!isRequestSuccess($json)){
@@ -138,8 +138,9 @@ function replaceMediaUrl($content, $date){
 }
 
 function saveMedia($url, $date, $mediaCount){
-    $media = file_get_contents($url);
-    $http_header = $http_response_header;
+    $data = safeFileGet($url, true);
+    $media = $data[0];
+    $http_header = $data[1];
     for($i = 0; $i < count($http_header); $i++){
         if(($mimeType = preg_replace('/^Content-Type: (image|video)\//', '', $http_header[$i])) !== $http_header[$i]){
             $mediaExt = ($mimeType === 'jpeg') ? 'jpg' : $mimeType;
@@ -152,5 +153,21 @@ function saveMedia($url, $date, $mediaCount){
         file_put_contents($mediaPath, $media);
     }
     return $mediaPath;
+}
+
+function safeFileGet($url, $includeResponseHeader = false){
+    while(true){
+        sleep(1);
+        $data = @file_get_contents($url);
+        if($data === false){
+            sleep(1);
+            continue;
+        }
+        if($includeResponseHeader){
+            return [$data, $http_response_header];
+        }else{
+            return $data;
+        }
+    }
 }
 
