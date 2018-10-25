@@ -10,7 +10,8 @@ date_default_timezone_set('Asia/Tokyo');
 $memberName = $argv[1];
 $url = "https://blog-api.line-apps.com/v1/blog/${memberName}/articles?withBlog=1&pageKey=";
 
-define('MEMBER_DIR', __DIR__ . "/${memberName}");
+define('MEMBER_DIR_ABS', __DIR__ . "/${memberName}");
+define('MEMBER_DIR_REL', "./${memberName}");
 
 $db = new SQLite3(__DIR__ . "/${memberName}.db");
 $db->exec("CREATE TABLE IF NOT EXISTS ${memberName} (id INTEGER UNIQUE, title TEXT, createdAt INTEGER, plain TEXT, content TEXT)");
@@ -88,8 +89,8 @@ function isNextPageExists($json){
 
 
 function getArticleContent($body, $createdAt){
-    if(!file_exists(MEMBER_DIR)){
-        mkdir(MEMBER_DIR);
+    if(!file_exists(MEMBER_DIR_ABS)){
+        mkdir(MEMBER_DIR_ABS);
     }
 
     $date = date('Y-m-d H.i.s', $createdAt);
@@ -147,12 +148,12 @@ function saveMedia($url, $date, $mediaCount){
             break;
         }
     }
-    $mediaPath = MEMBER_DIR . "/${date}-${mediaCount}.${mediaExt}";
+    $mediaPath = MEMBER_DIR_ABS . "/${date}-${mediaCount}.${mediaExt}";
 
     if(!file_exists($mediaPath)){
         file_put_contents($mediaPath, $media);
     }
-    return $mediaPath;
+    return MEMBER_DIR_REL . "/${date}-${mediaCount}.${mediaExt}";
 }
 
 function safeFileGet($url, $includeResponseHeader = false){
