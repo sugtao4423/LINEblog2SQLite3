@@ -21,6 +21,7 @@ $lastId = ($lastId === NULL) ? 0 : $lastId;
 
 $articles = array();
 
+echo '0 posts done';
 for($i = 1; ; $i++){
     $str = safeFileGet($url . $i);
     $json = json_decode($str, true);
@@ -53,6 +54,9 @@ for($i = 1; ; $i++){
             'plain' => $plain,
             'content' => $content)
         );
+
+        echo "\r";
+        echo count($articles) . ' posts done';
     }
 
     if(!isNextPageExists($json)){
@@ -74,8 +78,7 @@ foreach($articles as $article){
     $stmt->bindValue(':content', $article['content'], SQLITE3_TEXT);
     $stmt->execute();
 }
-echo "Finished!\n";
-echo 'Add count: ' . count($articles) . "\n";
+echo "\nFinished!\n";
 
 
 
