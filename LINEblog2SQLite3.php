@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 if(!isset($argv[1])){
     echo "Please set memberName\n";
     echo "php {$argv[0]} MEMBER_NAME\n";
@@ -36,9 +38,9 @@ for($i = 1; ; $i++){
     for($j = 0; $j < count($json['data']['rows']); $j++){
         $current = $json['data']['rows'][$j];
 
-        $id = trim($current['id']);
+        $id = $current['id'];
         $title = trim($current['title']);
-        $createdAt = trim($current['createdAt']);
+        $createdAt = $current['createdAt'];
         $plain = trim($current['bodyPlain']);
         $content = trim(getArticleContent($current['body'], $createdAt));
 
@@ -82,16 +84,16 @@ echo "\nFinished!\n";
 
 
 
-function isRequestSuccess($json){
+function isRequestSuccess(array $json): bool{
     return $json['status'] === 200;
 }
 
-function isNextPageExists($json){
+function isNextPageExists(array $json): bool{
     return isset($json['data']['nextPageKey']);
 }
 
 
-function getArticleContent($body, $createdAt){
+function getArticleContent(string $body, int $createdAt): string{
     if(!file_exists(MEMBER_DIR_ABS)){
         mkdir(MEMBER_DIR_ABS);
     }
@@ -101,7 +103,7 @@ function getArticleContent($body, $createdAt){
     return $content;
 }
 
-function replaceMediaUrl($content, $date){
+function replaceMediaUrl(string $content, string $date): string{
     $mediaCount = 1;
     $instagramImgPattern = '|(<div\s+?class="embed-instagram-media">)<a\s+?href="(https://www\.instagram\.com/p/.+?/)"(.*?)><img\s+?src="https://scontent\.cdninstagram\.com/.+?"(.*?)/></a></div>|s';
     if(preg_match_all($instagramImgPattern, $content, $m) > 0){
@@ -141,7 +143,7 @@ function replaceMediaUrl($content, $date){
     return $content;
 }
 
-function saveMedia($url, $date, $mediaCount){
+function saveMedia(string $url, string $date, int $mediaCount): string{
     $data = safeFileGet($url, true);
     $media = $data[0];
     $http_header = $data[1];
@@ -159,7 +161,7 @@ function saveMedia($url, $date, $mediaCount){
     return MEMBER_DIR_REL . "/${date}-${mediaCount}.${mediaExt}";
 }
 
-function safeFileGet($url, $includeResponseHeader = false){
+function safeFileGet(string $url, bool $includeResponseHeader = false){
     while(true){
         sleep(1);
         $data = @file_get_contents($url);
