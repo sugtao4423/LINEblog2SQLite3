@@ -21,7 +21,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS ${memberName} (id INTEGER UNIQUE, title TE
 $lastId = $db->querySingle("SELECT max(id) FROM ${memberName}");
 $lastId = ($lastId === NULL) ? 0 : $lastId;
 
-$articles = array();
+$articles = [];
 
 echo '0 posts done';
 for($i = 1; ; $i++){
@@ -49,13 +49,13 @@ for($i = 1; ; $i++){
             break;
         }
 
-        array_push($articles, array(
+        $articles[] = [
             'id' => $id,
             'title' => $title,
             'createdAt' => $createdAt,
             'plain' => $plain,
-            'content' => $content)
-        );
+            'content' => $content
+        ];
 
         echo "\r";
         echo count($articles) . ' posts done';
@@ -124,7 +124,7 @@ function replaceMediaUrl(string $content, string $date): string{
         }
     }
 
-    $imgCache = array();
+    $imgCache = [];
     $imgPattern = '#(href|src)="(https://obs\.line-scdn\.net/.+?)"#s';
     if(preg_match_all($imgPattern, $content, $m) > 0){
         for($i = 0; $i < count($m[0]); $i++){
@@ -133,7 +133,7 @@ function replaceMediaUrl(string $content, string $date): string{
                 $imgPath = $imgCache[$url];
             }else{
                 $imgPath = saveMedia($url, $date, $mediaCount++);
-                $imgCache = array_merge($imgCache, array($url => $imgPath));
+                $imgCache[$url] = $imgPath;
             }
 
             $content = preg_replace($imgPattern, "$1=\"${imgPath}\"", $content, 1);
